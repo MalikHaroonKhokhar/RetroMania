@@ -128,14 +128,28 @@ private:
         }
 
         // Apply resolution
-        if (e1HasRb && !registry.GetComponent<Rigidbody>(e1).IsStatic) {
+        bool e1Dynamic = e1HasRb && !registry.GetComponent<Rigidbody>(e1).IsStatic;
+        bool e2Dynamic = e2HasRb && !registry.GetComponent<Rigidbody>(e2).IsStatic;
+
+        if (e1Dynamic && e2Dynamic) {
+            // Push both apart
+            t1.x += resolveX * 0.5f;
+            t1.y += resolveY * 0.5f;
+            t2.x -= resolveX * 0.5f;
+            t2.y -= resolveY * 0.5f;
+
+            auto& rb1 = registry.GetComponent<Rigidbody>(e1);
+            auto& rb2 = registry.GetComponent<Rigidbody>(e2);
+            if (resolveX != 0) { rb1.Velocity.x = 0; rb2.Velocity.x = 0; }
+            if (resolveY != 0) { rb1.Velocity.y = 0; rb2.Velocity.y = 0; }
+        } else if (e1Dynamic) {
             t1.x += resolveX;
             t1.y += resolveY;
 
             auto& rb1 = registry.GetComponent<Rigidbody>(e1);
             if (resolveX != 0) rb1.Velocity.x = 0;
             if (resolveY != 0) rb1.Velocity.y = 0;
-        } else if (e2HasRb && !registry.GetComponent<Rigidbody>(e2).IsStatic) {
+        } else if (e2Dynamic) {
             t2.x -= resolveX;
             t2.y -= resolveY;
 

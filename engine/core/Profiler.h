@@ -72,7 +72,8 @@ private:
     Timer m_Timer;
 };
 
-#define PROFILE_SCOPE(name) ::Forge::ProfileScope profileScope##__LINE__(name)
+#define PROFILE_SCOPE_IMPL(name, line) ::Forge::ProfileScope profileScope##line(name)
+#define PROFILE_SCOPE(name) PROFILE_SCOPE_IMPL(name, __LINE__)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
 
 } // namespace Forge

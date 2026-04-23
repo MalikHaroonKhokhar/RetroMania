@@ -23,7 +23,13 @@ public:
     template<typename T>
     void Subscribe(EventCallback<T> callback) {
         m_Callbacks[typeid(T)].push_back([callback](Event& event) {
+#ifndef NDEBUG
+            if (auto* casted = dynamic_cast<T*>(&event)) {
+                callback(*casted);
+            }
+#else
             callback(static_cast<T&>(event));
+#endif
         });
     }
 
@@ -32,7 +38,7 @@ public:
      */
     template<typename T>
     void Dispatch(T& event) {
-        auto it = m_Callbacks.find(typeid(T));
+        auto it = m_Callbacks.find(typeid(std::remove_reference_t<decltype(event)>));
         if (it != m_Callbacks.end()) {
             for (auto& callback : it->second) {
                 if (event.Handled) break;

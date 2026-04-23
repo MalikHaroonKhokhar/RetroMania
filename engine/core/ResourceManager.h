@@ -24,8 +24,14 @@ public:
     template<typename T, typename... Args>
     static std::shared_ptr<T> Load(const std::string& name, Args&&... args) {
         if (s_Resources.find(name) != s_Resources.end()) {
-            FORGE_LOG_INFO("Cache hit for resource: ", name);
-            return std::static_pointer_cast<T>(s_Resources[name]);
+            auto ptr = std::dynamic_pointer_cast<T>(s_Resources[name]);
+            if (ptr) {
+                FORGE_LOG_INFO("Cache hit for resource: ", name);
+                return ptr;
+            } else {
+                FORGE_LOG_ERROR("Resource type mismatch on load cache hit: ", name);
+                return nullptr;
+            }
         }
 
         FORGE_LOG_INFO("Loading resource: ", name);
@@ -35,12 +41,23 @@ public:
     }
 
     template<typename T>
-    static std::shared_ptr<T> Get(const std::string& name) {
+    static std::shared_ptr<T> TryGet(const std::string& name) {
         if (s_Resources.find(name) == s_Resources.end()) {
-            FORGE_LOG_ERROR("Resource not found: ", name);
             return nullptr;
         }
-        return std::static_pointer_cast<T>(s_Resources[name]);
+        return std::dynamic_pointer_cast<T>(s_Resources[name]);
+    }
+
+    template<typename T>
+    static std::shared_ptr<T> Get(const std::string& name) {
+        if (s_Resources.find(name) == s_Resources.end()) {
+            return nullptr;
+        }
+        auto ptr = std::dynamic_pointer_cast<T>(s_Resources[name]);
+        if (!ptr) {
+            FORGE_LOG_ERROR("Resource type mismatch: ", name);
+        }
+        return ptr;
     }
 
     static void Unload(const std::string& name) {

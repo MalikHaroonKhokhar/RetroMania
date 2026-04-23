@@ -13,8 +13,8 @@ class ScriptableEntity;
 struct Script {
     std::shared_ptr<ScriptableEntity> Instance;
 
-    std::shared_ptr<ScriptableEntity> (*InstantiateScript)();
-    void (*DestroyScript)(Script*);
+    std::shared_ptr<ScriptableEntity> (*InstantiateScript)() = nullptr;
+    void (*DestroyScript)(Script*) = nullptr;
 
     template<typename T>
     void Bind() {

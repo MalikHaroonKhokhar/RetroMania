@@ -4,6 +4,8 @@
 #include <string>
 #include <chrono>
 #include <iomanip>
+#include <utility>
+#include <ctime>
 
 namespace Forge {
 
@@ -41,10 +43,15 @@ private:
     static std::string GetTimestamp() {
         auto now = std::chrono::system_clock::now();
         std::time_t time = std::chrono::system_clock::to_time_t(now);
-        std::tm* tm_info = std::localtime(&time);
+        std::tm tm_info;
+#if defined(_WIN32)
+        localtime_s(&tm_info, &time);
+#else
+        localtime_r(&time, &tm_info);
+#endif
 
         char buffer[32];
-        std::strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+        std::strftime(buffer, sizeof(buffer), "%H:%M:%S", &tm_info);
         return std::string(buffer);
     }
 

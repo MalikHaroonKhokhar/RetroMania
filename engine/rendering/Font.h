@@ -25,6 +25,22 @@ public:
         }
     }
 
+    Font(const Font&) = delete;
+    Font& operator=(const Font&) = delete;
+    Font(Font&& other) noexcept : m_Font(other.m_Font) {
+        other.m_Font = nullptr;
+    }
+    Font& operator=(Font&& other) noexcept {
+        if (this != &other) {
+            if (m_Font) {
+                TTF_CloseFont(m_Font);
+            }
+            m_Font = other.m_Font;
+            other.m_Font = nullptr;
+        }
+        return *this;
+    }
+
     TTF_Font* GetNativeFont() const { return m_Font; }
 
 private:

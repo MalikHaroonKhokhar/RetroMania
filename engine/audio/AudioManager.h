@@ -25,6 +25,22 @@ public:
         }
     }
 
+    SoundEffect(const SoundEffect&) = delete;
+    SoundEffect& operator=(const SoundEffect&) = delete;
+    SoundEffect(SoundEffect&& other) noexcept : m_Chunk(other.m_Chunk) {
+        other.m_Chunk = nullptr;
+    }
+    SoundEffect& operator=(SoundEffect&& other) noexcept {
+        if (this != &other) {
+            if (m_Chunk) {
+                Mix_FreeChunk(m_Chunk);
+            }
+            m_Chunk = other.m_Chunk;
+            other.m_Chunk = nullptr;
+        }
+        return *this;
+    }
+
     Mix_Chunk* GetNativeChunk() const { return m_Chunk; }
 
 private:
@@ -47,6 +63,22 @@ public:
         if (m_Music) {
             Mix_FreeMusic(m_Music);
         }
+    }
+
+    Music(const Music&) = delete;
+    Music& operator=(const Music&) = delete;
+    Music(Music&& other) noexcept : m_Music(other.m_Music) {
+        other.m_Music = nullptr;
+    }
+    Music& operator=(Music&& other) noexcept {
+        if (this != &other) {
+            if (m_Music) {
+                Mix_FreeMusic(m_Music);
+            }
+            m_Music = other.m_Music;
+            other.m_Music = nullptr;
+        }
+        return *this;
     }
 
     Mix_Music* GetNativeMusic() const { return m_Music; }
@@ -80,7 +112,8 @@ public:
     }
 
     static std::shared_ptr<SoundEffect> LoadSoundEffect(const std::string& path, const std::string& name) {
-        if (auto cached = ResourceManager::Get<SoundEffect>(name)) {
+        std::string key = "SFX_" + name;
+        if (auto cached = ResourceManager::TryGet<SoundEffect>(key)) {
             return cached;
         }
 
@@ -89,16 +122,21 @@ public:
             return nullptr;
         }
 
-        // Use a generic load approach
-        auto res = ResourceManager::Load<SoundEffect>(name, path);
-        return res;
+        return ResourceManager::Load<SoundEffect>(key, path);
     }
 
     static std::shared_ptr<Music> LoadMusic(const std::string& path, const std::string& name) {
-        if (auto cached = ResourceManager::Get<Music>(name)) {
+        std::string key = "MUS_" + name;
+        if (auto cached = ResourceManager::TryGet<Music>(key)) {
             return cached;
         }
-        return ResourceManager::Load<Music>(name, path);
+
+        auto music = std::make_shared<Music>(path);
+        if (music->GetNativeMusic() == nullptr) {
+            return nullptr;
+        }
+
+        return ResourceManager::Load<Music>(key, path);
     }
 };
 

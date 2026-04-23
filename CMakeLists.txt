@@ -82,10 +82,6 @@ endif()
 
 target_include_directories(Forge2D PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/engine
-    ${sdl2_image_SOURCE_DIR}/include
-    ${sdl2_mixer_SOURCE_DIR}/include
-    ${SDL2_SOURCE_DIR}/include
-    /usr/include/SDL2
 )
 
 target_link_libraries(Forge2D PUBLIC

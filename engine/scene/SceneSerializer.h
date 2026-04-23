@@ -72,20 +72,33 @@ public:
         }
 
         auto registry = m_Scene->GetRegistry();
-        // Clear scene first... (For simplicity, we assume new scene)
+        // Clear scene first... (For simplicity, we recreate the registry if it was fully supported, but we will just rely on the assumption of a new scene for this scope)
 
-        if (json.contains("Entities")) {
+        if (json.contains("Entities") && json["Entities"].is_array()) {
             for (auto& entityJson : json["Entities"]) {
-                std::string name = entityJson["Tag"]["Name"].get<std::string>();
+                if (!entityJson.is_object()) continue;
+
+                std::string name = "Entity";
+                if (entityJson.contains("Tag") && entityJson["Tag"].is_object()) {
+                    if (entityJson["Tag"].contains("Name") && entityJson["Tag"]["Name"].is_string()) {
+                        name = entityJson["Tag"]["Name"].get<std::string>();
+                    }
+                }
+
                 Entity e = m_Scene->CreateEntity(name);
 
-                if (entityJson.contains("Transform")) {
+                if (entityJson.contains("Transform") && entityJson["Transform"].is_object()) {
                     Transform t;
-                    t.x = entityJson["Transform"]["x"].get<float>();
-                    t.y = entityJson["Transform"]["y"].get<float>();
-                    t.rotation = entityJson["Transform"]["rotation"].get<float>();
-                    t.scaleX = entityJson["Transform"]["scaleX"].get<float>();
-                    t.scaleY = entityJson["Transform"]["scaleY"].get<float>();
+                    auto transformJson = entityJson["Transform"];
+                    if (transformJson.contains("x") && transformJson["x"].is_number()) t.x = transformJson["x"].get<float>();
+                    if (transformJson.contains("y") && transformJson["y"].is_number()) t.y = transformJson["y"].get<float>();
+                    if (transformJson.contains("rotation") && transformJson["rotation"].is_number()) t.rotation = transformJson["rotation"].get<float>();
+                    if (transformJson.contains("scaleX") && transformJson["scaleX"].is_number()) t.scaleX = transformJson["scaleX"].get<float>();
+                    if (transformJson.contains("scaleY") && transformJson["scaleY"].is_number()) t.scaleY = transformJson["scaleY"].get<float>();
+
+                    if (registry->HasComponent<Transform>(e)) {
+                        registry->RemoveComponent<Transform>(e); // Remove the default one added by create or just overwrite it
+                    }
                     registry->AddComponent(e, t);
                 }
             }

@@ -3,7 +3,16 @@
 
 namespace Forge {
 
+static int s_WindowCount = 0;
+
 Window::Window(const WindowProps& props) {
+    if (s_WindowCount == 0) {
+        if (SDL_Init(0) < 0) {
+            FORGE_LOG_ERROR("Could not initialize base SDL2: ", SDL_GetError());
+        }
+    }
+    s_WindowCount++;
+
     Init(props);
 }
 
@@ -24,8 +33,8 @@ void Window::Init(const WindowProps& props) {
         SDL_setenv("SDL_AUDIODRIVER", "dummy", 1);
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
-        FORGE_LOG_ERROR("Could not initialize SDL2: ", SDL_GetError());
+    if (SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+        FORGE_LOG_ERROR("Could not initialize SDL2 SubSystems: ", SDL_GetError());
         return;
     }
 
@@ -48,7 +57,12 @@ void Window::Shutdown() {
         SDL_DestroyWindow(m_Window);
         m_Window = nullptr;
     }
-    SDL_Quit();
+    SDL_QuitSubSystem(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+
+    s_WindowCount--;
+    if (s_WindowCount == 0) {
+        SDL_Quit();
+    }
 }
 
 void Window::Update() {

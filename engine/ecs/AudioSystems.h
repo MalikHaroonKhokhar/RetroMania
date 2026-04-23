@@ -21,8 +21,15 @@ public:
                 float vol = std::clamp(source.Volume, 0.0f, 1.0f);
                 Mix_VolumeChunk(source.Clip->GetNativeChunk(), (int)(vol * MIX_MAX_VOLUME));
 
-                source.Channel = Mix_PlayChannel(-1, source.Clip->GetNativeChunk(), loops);
-                source.Initialized = true;
+                int channel = Mix_PlayChannel(-1, source.Clip->GetNativeChunk(), loops);
+                if (channel != -1) {
+                    source.Channel = channel;
+                    source.Initialized = true;
+                } else {
+                    source.Channel = -1;
+                    source.Initialized = false;
+                    FORGE_LOG_ERROR("Failed to play audio chunk: ", Mix_GetError());
+                }
             }
         }
     }

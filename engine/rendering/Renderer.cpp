@@ -9,7 +9,12 @@ void Renderer::Init(Window* window) {
 
     s_Renderer = SDL_CreateRenderer(window->GetNativeWindow(), -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!s_Renderer) {
-        FORGE_LOG_ERROR("Failed to create SDL Renderer: ", SDL_GetError());
+        FORGE_LOG_WARN("Failed to create Accelerated SDL Renderer: ", SDL_GetError(), " - Attempting Software Fallback...");
+        s_Renderer = SDL_CreateRenderer(window->GetNativeWindow(), -1, SDL_RENDERER_SOFTWARE);
+        if (!s_Renderer) {
+            FORGE_LOG_ERROR("Failed to create Software SDL Renderer: ", SDL_GetError());
+            return;
+        }
     }
 
     // Initialize SDL_image (PNG support)
@@ -20,6 +25,7 @@ void Renderer::Init(Window* window) {
 }
 
 void Renderer::Shutdown() {
+    ResourceManager::Clear();
     if (s_Renderer) {
         SDL_DestroyRenderer(s_Renderer);
         s_Renderer = nullptr;
@@ -28,11 +34,13 @@ void Renderer::Shutdown() {
 }
 
 void Renderer::BeginFrame() {
+    if (!s_Renderer) return;
     SDL_SetRenderDrawColor(s_Renderer, s_ClearColor.r, s_ClearColor.g, s_ClearColor.b, s_ClearColor.a);
     SDL_RenderClear(s_Renderer);
 }
 
 void Renderer::EndFrame() {
+    if (!s_Renderer) return;
     SDL_RenderPresent(s_Renderer);
 }
 
@@ -41,7 +49,10 @@ void Renderer::SetClearColor(const Color& color) {
 }
 
 std::shared_ptr<Texture> Renderer::LoadTexture(const std::string& path, const std::string& name) {
-    if (auto cached = ResourceManager::Get<Texture>(name)) {
+    if (!s_Renderer) return nullptr;
+
+    std::string key = "TEX_" + name;
+    if (auto cached = ResourceManager::TryGet<Texture>(key)) {
         return cached;
     }
 
@@ -62,28 +73,31 @@ std::shared_ptr<Texture> Renderer::LoadTexture(const std::string& path, const st
         return nullptr;
     }
 
-    return ResourceManager::Load<Texture>(name, newTexture, width, height);
+    return ResourceManager::Load<Texture>(key, newTexture, width, height);
 }
 
 void Renderer::DrawRect(const Vec2& position, const Vec2& size, const Color& color) {
+    if (!s_Renderer) return;
     SDL_Rect rect = { (int)position.x, (int)position.y, (int)size.x, (int)size.y };
     SDL_SetRenderDrawColor(s_Renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawRect(s_Renderer, &rect);
 }
 
 void Renderer::DrawFilledRect(const Vec2& position, const Vec2& size, const Color& color) {
+    if (!s_Renderer) return;
     SDL_Rect rect = { (int)position.x, (int)position.y, (int)size.x, (int)size.y };
     SDL_SetRenderDrawColor(s_Renderer, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(s_Renderer, &rect);
 }
 
 void Renderer::DrawLine(const Vec2& start, const Vec2& end, const Color& color) {
+    if (!s_Renderer) return;
     SDL_SetRenderDrawColor(s_Renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawLine(s_Renderer, (int)start.x, (int)start.y, (int)end.x, (int)end.y);
 }
 
 void Renderer::DrawTexture(std::shared_ptr<Texture> texture, const Vec2& position, const Vec2& size, float rotation, const Color& tint) {
-    if (!texture) return;
+    if (!s_Renderer || !texture) return;
 
     SDL_Rect destRect = { (int)position.x, (int)position.y, (int)size.x, (int)size.y };
     SDL_SetTextureColorMod(texture->GetNativeTexture(), tint.r, tint.g, tint.b);
@@ -93,7 +107,7 @@ void Renderer::DrawTexture(std::shared_ptr<Texture> texture, const Vec2& positio
 }
 
 void Renderer::DrawTextureEx(std::shared_ptr<Texture> texture, const SDL_Rect* srcRect, const SDL_Rect* destRect, float rotation, const SDL_Point* center, SDL_RendererFlip flip, const Color& tint) {
-    if (!texture) return;
+    if (!s_Renderer || !texture) return;
 
     SDL_SetTextureColorMod(texture->GetNativeTexture(), tint.r, tint.g, tint.b);
     SDL_SetTextureAlphaMod(texture->GetNativeTexture(), tint.a);

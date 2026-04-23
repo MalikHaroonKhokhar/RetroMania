@@ -22,6 +22,24 @@ public:
         }
     }
 
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
+    Texture(Texture&& other) noexcept : m_Texture(other.m_Texture), m_Width(other.m_Width), m_Height(other.m_Height) {
+        other.m_Texture = nullptr;
+    }
+    Texture& operator=(Texture&& other) noexcept {
+        if (this != &other) {
+            if (m_Texture) {
+                SDL_DestroyTexture(m_Texture);
+            }
+            m_Texture = other.m_Texture;
+            m_Width = other.m_Width;
+            m_Height = other.m_Height;
+            other.m_Texture = nullptr;
+        }
+        return *this;
+    }
+
     SDL_Texture* GetNativeTexture() const { return m_Texture; }
     int GetWidth() const { return m_Width; }
     int GetHeight() const { return m_Height; }

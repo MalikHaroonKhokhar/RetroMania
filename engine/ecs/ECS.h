@@ -61,6 +61,8 @@ public:
             m_IndexToEntityMap[indexOfRemovedEntity] = entityOfLastElement;
         }
 
+        m_ComponentArray.pop_back();
+
         m_EntityToIndexMap.erase(entity);
         m_IndexToEntityMap.erase(indexOfLastElement);
         m_Size--;
