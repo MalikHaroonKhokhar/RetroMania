@@ -107,6 +107,8 @@ public:
     }
 
     static void Shutdown() {
+        // Clear all resources to avoid freeing mix chunks after Mix_CloseAudio.
+        ResourceManager::Clear();
         Mix_CloseAudio();
         Mix_Quit();
     }
